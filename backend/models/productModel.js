@@ -18,7 +18,7 @@ const productSchema = new Schema(
       required: [true, "Please enter product price"],
       maxlength: [8, "Price cannot exceed 8 characters"],
     },
-    rating: { type: Number, default: 0 },
+    ratings: { type: Number, default: 0 },
     images: [
       {
         public_id: { type: String, required: true },
@@ -39,8 +39,13 @@ const productSchema = new Schema(
       type: Number,
       default: 0,
     },
-    review: [
+    reviews: [
       {
+        user: {
+          type: Schema.ObjectId,
+          ref: "User",
+          required: true,
+        },
         name: { type: String, required: true },
         rating: { type: Number, required: true },
         comment: { type: String, required: true },

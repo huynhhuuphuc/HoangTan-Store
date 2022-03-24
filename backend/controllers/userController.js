@@ -43,7 +43,7 @@ exports.loginUser = catchAsyncErrors(async (req, res, next) => {
   sendToken(user, 200, res);
 });
 
-// Logout User
+// [GET] Logout User
 exports.logout = catchAsyncErrors(async (req, res, next) => {
   res.cookie("token", null, {
     expires: new Date(Date.now()),
@@ -95,7 +95,7 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
   }
 });
 
-// Reset Passowrd
+// [PUT] Reset Passowrd
 exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   // creating token hash
   const resetPasswordToken = crypto
@@ -118,7 +118,7 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   }
 
   if (req.body.password !== req.body.confirmPassword) {
-    return next(new ErrorHander("Password does not password", 400));
+    return next(new ErrorHander("Mật khẩu không khớp", 400));
   }
 
   user.password = req.body.password;
@@ -128,4 +128,111 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
   await user.save();
 
   sendToken(user, 200, res);
+});
+
+// [GET] Get User Details
+exports.getUserDetails = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// [PUT] Update/Change User Password
+exports.updatePassword = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.user.id).select("+password");
+
+  const isPasswordMatched = await user.comparePassword(req.body.oldPassword);
+
+  if (!isPasswordMatched) {
+    return next(new ErrorHander("Mật khẩu không đúng", 400));
+  }
+
+  if (req.body.newPassword !== req.body.confirmPassword) {
+    return next(new ErrorHander("Mật khẩu không khớp", 400));
+  }
+
+  user.password = req.body.newPassword;
+
+  await user.save();
+
+  sendToken(user, 200, res);
+});
+
+// [PUT] Update User Profile
+exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
+  const newUserData = {
+    name: req.body.name,
+    email: req.body.email,
+  };
+  const user = await User.findByIdAndUpdate(req.user.id, newUserData, {
+    new: true,
+    runValidators: true,
+  });
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// [GET] Get All User -- Admin
+exports.getAllUser = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.find();
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// [GET] Get Single User -- Admin
+exports.getSingleUser = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return next(
+      new ErrorHander(`Người dùng không tồn tại ${req.params.id}}`, 404)
+    );
+  }
+
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// [PUT] Update User Role -- Admin
+exports.updateUserRole = catchAsyncErrors(async (req, res, next) => {
+  const newUserData = {
+    name: req.body.name,
+    email: req.body.email,
+    role: req.body.role,
+  };
+  const user = await User.findByIdAndUpdate(req.params.id, newUserData, {
+    new: true,
+    runValidators: true,
+  });
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+// [DELETE] Delete User -- Admin
+exports.deleteUser = catchAsyncErrors(async (req, res, next) => {
+  const user = User.findById(req.params.id);
+
+  if (!user) {
+    return next(
+      ErrorHander(`Không tìm thấy tên người dùng ${req.params.id}`, 404)
+    );
+  }
+
+  await User.deleteOne({ _id: req.params.id }).then(() => {
+    res.status(200).json({
+      success: true,
+      message: "Người dùng đã được xóa",
+    });
+  });
 });
