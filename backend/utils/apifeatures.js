@@ -22,6 +22,7 @@ class ApiFeatures {
 
   filter() {
     const queryClone = { ...this.queryStr };
+    
     // Removing some fields for category
     const removeFields = ["keyword", "page", "limit"];
     removeFields.forEach((key) => delete queryClone[key]);
